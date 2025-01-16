@@ -1,3 +1,5 @@
-def f(a, b, c):
-    return a + b + c 
+def f(*nums):
+    return sum(nums)   
+
+
     
