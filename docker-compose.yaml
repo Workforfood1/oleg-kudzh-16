@@ -1,0 +1,72 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+
+  airflow-init:
+    image: apache/airflow:2.5.0-python3.10
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    volumes:
+      - ./requirements.txt:/requirements.txt
+    depends_on:
+      - postgres
+    entrypoint: >
+      /bin/bash -c " pip install -r /requirements.txt && \ airflow db init && \ airflow users create -u admin -p admin -f Admin -l User -r Admin -e admin@example.com "
+
+  webserver:
+    image: apache/airflow:2.5.0-python3.10
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      PYTHONPATH: /opt/airflow
+      AIRFLOW__CORE__PLUGINS_FOLDER: /opt/airflow/plugins
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./data:/opt/data
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/requirements.txt
+      - ./config.yaml:/opt/airflow/config.yaml
+      - ./models:/opt/airflow/models
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - airflow-init
+    entrypoint: >
+      /bin/bash -c "pip install -r /requirements.txt && airflow webserver"
+
+  scheduler:
+    image: apache/airflow:2.5.0-python3.10
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      PYTHONPATH: /opt/airflow
+      AIRFLOW__CORE__PLUGINS_FOLDER: /opt/airflow/plugins
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./data:/opt/data
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/requirements.txt
+      - ./config.yaml:/opt/airflow/config.yaml
+      - ./models:/opt/airflow/models
+    depends_on:
+      - postgres
+      - airflow-init
+    entrypoint: >
+      /bin/bash -c "pip install -r /requirements.txt && airflow scheduler"
+
+volumes:
+  postgres-db-volume:
