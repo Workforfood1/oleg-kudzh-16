@@ -1,0 +1,57 @@
+schema: '2.0'
+stages:
+  create_dataset:
+    cmd: python src/dataset.py params.yaml
+    deps:
+    - path: src/dataset.py
+      hash: md5
+      md5: 46d816c9037443e8d7f06e4ecf154031
+      size: 1416
+    params:
+      params.yaml:
+        data_params:
+          raw_data_path: ''
+          train_data_path: ./data/processed/train.csv
+          test_data_path: ./data/processed/test.csv
+          n_samples: 100
+          n_features: 10
+          test_size: 0.3
+    outs:
+    - path: ./data/processed/test.csv
+      hash: md5
+      md5: 3b6b42699d08d0ec39a67e71e371ad0c
+      size: 6069
+    - path: ./data/processed/train.csv
+      hash: md5
+      md5: 98c91dc72aec0211a01edf8c7ad5c674
+      size: 14155
+  train_model:
+    cmd: python src/modeling/train.py params.yaml
+    deps:
+    - path: ./data/processed/test.csv
+      hash: md5
+      md5: 3b6b42699d08d0ec39a67e71e371ad0c
+      size: 6069
+    - path: ./data/processed/train.csv
+      hash: md5
+      md5: 98c91dc72aec0211a01edf8c7ad5c674
+      size: 14155
+    - path: src/modeling/train.py
+      hash: md5
+      md5: 5a7421241d01a453d69ee589189e9bad
+      size: 1939
+    params:
+      params.yaml:
+        train_params:
+          model_path: ./models/random_forest.pkl
+          metrics_path: ./reports/report.json
+          n_estimators: 500
+    outs:
+    - path: ./models/random_forest.pkl
+      hash: md5
+      md5: 785ec53824adfb74c5e49c1a0e0e2729
+      size: 579243
+    - path: ./reports/report.json
+      hash: md5
+      md5: 3337a0ffdc6e881a677ec6d2589720a7
+      size: 16
